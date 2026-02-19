@@ -45,10 +45,10 @@ void batteryKeepAliveTick()
 
     const unsigned long now = millis();
 
-    // Якщо імпульс активний — чекаємо 5 с і відпускаємо реле
+    // Якщо імпульс активний — чекаємо BAT_KEEPALIVE_PULSE_MS і відпускаємо реле
     if (pulseActive)
     {
-        if (now - pulseStartMs >= 5000UL)
+        if ((unsigned long)(now - pulseStartMs) >= (unsigned long)BAT_KEEPALIVE_PULSE_MS)
         {
             digitalWrite(RELAY_ACTIVE_BATTERY_PIN, HIGH); // нормальний стан
             pulseActive = false;
@@ -64,8 +64,8 @@ void batteryKeepAliveTick()
         return;
     }
 
-    // Кожні 8 годин — імпульс
-    if (now - lastPulseMs >= 8UL * 60UL * 60UL * 1000UL)
+    // Кожні BAT_KEEPALIVE_PERIOD_MS — імпульс
+    if ((uint64_t)(now - lastPulseMs) >= BAT_KEEPALIVE_PERIOD_MS)
     {
         digitalWrite(RELAY_ACTIVE_BATTERY_PIN, LOW); // спрацювання реле
         pulseStartMs = now;

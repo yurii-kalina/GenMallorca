@@ -3,14 +3,14 @@
 #include <ZMPT101B.h>
 
 #include "generator_state.h"
-#include "drivers/adc_utils.h"
-#include "config/config.h"
-#include "config/pins.h"
-#include "services/LogSender.h"
-#include "services/EEPROMHandler.h"
+#include "config.h"
+#include "pins.h"
+#include "EEPROMHandler.h"
+
+// Уникаємо залежності від HTTP-рівня: автостоп викликає бізнес-операцію.
+#include "generator_ops.h"
 
 static ZMPT101B sensor220(ADC_OUT_VOLTAGE_PIN, ZMPT_MAINS_HZ);
-void handleStop();
 
 // -----------------------------------------------------------------------------
 // Стан/лічильники (без проміжних накопичень часу)
@@ -21,8 +21,6 @@ static unsigned long lastRunCheck = 0;  // останній момент опи�
 unsigned long generatorStartMillis = 0; // ВСТАНОВЛЮЄТЬСЯ ЛИШЕ У startGenerator()
 static unsigned long noInternetSince = 0;
 uint64_t gTotalRuntimeMs = 0ULL;
-static unsigned long lastRuntimeCheckpointMs = 0;
-static bool lastCheckpointRun = false;
 
 namespace
 {
@@ -48,8 +46,6 @@ void initGeneratorState()
   generatorStartMillis = 0;
   noInternetSince = 0;
   gTotalRuntimeMs = loadEepromTotalRuntimeMs();
-  lastRuntimeCheckpointMs = 0;
-  lastCheckpointRun = false;
 
   sensor220.setSensitivity(ZMPT_SENSITIVITY);
 }
@@ -108,7 +104,6 @@ void updateGeneratorState(bool force)
   //    тут і лог, і єдине місце запису в EEPROM (за вашою вимогою)
   if (lastGeneratorRun && !currentRun)
   {
-    sendLogToServer("error", "Generator stopped unexpectedly");
     saveEepromTotalRuntimeMs(gTotalRuntimeMs);
   }
 
@@ -121,8 +116,7 @@ void updateGeneratorState(bool force)
         noInternetSince = now;
       else if (elapsed(noInternetSince, NET_LOSS_AUTO_STOP_MS))
       {
-        sendLogToServer("error", "No internet for a configured timeout. Auto stop.");
-        handleStop();
+        (void)stopGenerator();
       }
     }
     else

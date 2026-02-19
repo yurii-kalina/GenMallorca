@@ -1,7 +1,7 @@
 #pragma once
 #include <Arduino.h>
-#include "config/pins.h"
-#include "config/config.h"
+#include "pins.h"
+#include "config.h"
 
 struct VoltReading
 {

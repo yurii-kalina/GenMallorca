@@ -14,7 +14,6 @@ struct StopResult
   bool ok;
   bool generatorRun;
   const char *status; // "stopped" | "stop_failed"
-  int stopAttempt;
 };
 
 struct StatusData
@@ -23,7 +22,6 @@ struct StatusData
   float analogBattery;
   float voltageBattery;
   float voltageOutput;
-  bool powerOn;
 };
 
 StartResult startGenerator();
